@@ -16,6 +16,14 @@ public class User {
 
     private String email;
     private String username;
+    private String password;
+
+    @Column(name= "forward_email")
+    private String forwardEmail;
+
+    @OneToMany(mappedBy = "user")
+    private List<FlightEmail> flightEmails;
+    public User() {}
 
     public void setId(Long id) {
         this.id = id;
@@ -37,10 +45,6 @@ public class User {
         this.flightEmails = flightEmails;
     }
 
-    private String password;
 
-    @OneToMany(mappedBy = "user")
-    private List<FlightEmail> flightEmails;
-    public User() {}
 
 }
