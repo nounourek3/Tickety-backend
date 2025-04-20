@@ -36,7 +36,59 @@ public class FlightEmail {
     @OneToOne(mappedBy = "flightEmail")
     private FlightNotification flightNotification;
 
-    // Getters and Setters...
+    public Long getId() {
+        return id;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public String getFlightNumber() {
+        return flightNumber;
+    }
+
+    public Date getFlightDate() {
+        return flightDate;
+    }
+
+    public String getDepartureTime() {
+        return departureTime;
+    }
+
+    public String getArrivalTime() {
+        return arrivalTime;
+    }
+
+    public String getDepartureAirport() {
+        return departureAirport;
+    }
+
+    public String getArrivalAirport() {
+        return arrivalAirport;
+    }
+
+    public String getBookingCode() {
+        return bookingCode;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public FlightNotification getFlightNotification() {
+        return flightNotification;
+    }
+
+// Getters and Setters...
 
     public void setId(Long id) {
         this.id = id;
