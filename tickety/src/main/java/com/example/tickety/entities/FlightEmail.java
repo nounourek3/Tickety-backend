@@ -141,4 +141,7 @@ public class FlightEmail {
     public void setFlightNotification(FlightNotification flightNotification) {
         this.flightNotification = flightNotification;
     }
+
+    public void setContent(String content) {
+    }
 }

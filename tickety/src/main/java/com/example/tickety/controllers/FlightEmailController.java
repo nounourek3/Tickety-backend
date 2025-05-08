@@ -4,14 +4,13 @@ import com.example.tickety.DTOS.Trip;
 import com.example.tickety.entities.FlightEmail;
 import com.example.tickety.repositories.FlightEmailRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("api/trips")
 public class FlightEmailController {
@@ -25,27 +24,36 @@ public class FlightEmailController {
         return flightEmailRepository.findAll();
     }
 
-    //Get all emails by user Id (used in "Mis viajes" pages)
     @GetMapping("/user/{userId}")
-    public List<Trip> getEmailByUser(@PathVariable Long userId) {
-        return flightEmailRepository.findByUserId(userId)
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public ResponseEntity<List<Trip>> getEmailByUser(@PathVariable Long userId) {
+        try {
+            List<Trip> trips = flightEmailRepository.findByUserId(userId)
+                    .stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(trips);
+        } catch (Exception e) {
+            e.printStackTrace(); // or use log.error("Error mapping trips", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    private Trip mapToDTO(FlightEmail email){
+    private Trip mapToDTO(FlightEmail email) {
         Trip dto = new Trip();
-        dto.subject = email.getSubject();
-        dto.sender = email.getSender();
-        dto.flightNumber = email.getFlightNumber();
-        dto.flightDate = email.getFlightDate();
-        dto.departureTime = email.getDepartureTime();
-        dto.arrivalTime = email.getArrivalTime();
-        dto.departureAirport = email.getDepartureAirport();
-        dto.arrivalAirport = email.getArrivalAirport();
-        dto.bookingCode = email.getBookingCode();
-        return dto;
 
+        dto.setSubject(email.getSubject() != null ? email.getSubject() : "");
+        dto.setSender(email.getSender() != null ? email.getSender() : "");
+        dto.setFlightNumber(email.getFlightNumber() != null ? email.getFlightNumber() : "");
+        dto.setFlightDate(email.getFlightDate()); // nullable is OK
+        dto.setDepartureTime(email.getDepartureTime());
+        dto.setArrivalTime(email.getArrivalTime());
+        dto.setDepartureAirport(email.getDepartureAirport() != null ? email.getDepartureAirport() : "");
+        dto.setArrivalAirport(email.getArrivalAirport() != null ? email.getArrivalAirport() : "");
+        dto.setBookingCode(email.getBookingCode() != null ? email.getBookingCode() : "");
+
+        return dto;
     }
+
+
 }
