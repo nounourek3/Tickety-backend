@@ -7,5 +7,7 @@ import java.util.List;
 
 public interface FlightEmailRepository extends JpaRepository<FlightEmail, Long> {
     List<FlightEmail> findByUserId(Long userId);
+
+
 }
 

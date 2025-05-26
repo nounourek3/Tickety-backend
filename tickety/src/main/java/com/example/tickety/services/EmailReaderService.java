@@ -1,5 +1,6 @@
 package com.example.tickety.services;
 
+import com.example.tickety.entities.EmailAttachment;
 import com.example.tickety.entities.FlightEmail;
 import com.example.tickety.entities.User;
 import com.example.tickety.repositories.FlightEmailRepository;
@@ -12,26 +13,27 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 @Service
 public class EmailReaderService {
 
-    @Autowired
     private final FlightEmailRepository flightEmailRepository;
+    private final UserRepository userRepository;
+    private final FlightParserService flightParserService;
 
     @Autowired
-    private final UserRepository userRepository;
-
-    public EmailReaderService(FlightEmailRepository flightEmailRepository, UserRepository userRepository) {
+    public EmailReaderService(
+            FlightEmailRepository flightEmailRepository,
+            UserRepository userRepository,
+            FlightParserService flightParserService
+    ) {
         this.flightEmailRepository = flightEmailRepository;
         this.userRepository = userRepository;
+        this.flightParserService = flightParserService;
     }
 
     @Value("${email.username}")
@@ -40,11 +42,10 @@ public class EmailReaderService {
     @Value("${email.password}")
     private String password;
 
-    @Scheduled(fixedRate = 60000) // Every minute
+    @Scheduled(fixedRate = 60000)
     public void checkInbox() {
         try {
             System.out.println("⏰ checkInbox() triggered at " + new Date());
-
 
             Properties props = new Properties();
             props.put("mail.store.protocol", "imaps");
@@ -56,7 +57,6 @@ public class EmailReaderService {
             Folder inbox = store.getFolder("INBOX");
             inbox.open(Folder.READ_WRITE);
 
-            // ✅ Only get UNSEEN emails
             Message[] messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
             System.out.println("📨 Found " + messages.length + " unread messages.");
 
@@ -65,33 +65,36 @@ public class EmailReaderService {
                 String sender = froms[0].toString();
                 String subject = message.getSubject();
                 Date sentDate = message.getSentDate();
-                String content = extractContent(message);
+                String htmlContent = extractHtmlContent(message);
+                List<EmailAttachment> attachments = extractAttachments(message);
 
                 System.out.println("➡️ Processing email from: " + sender);
                 System.out.println("📝 Subject: " + subject);
-                System.out.println("📦 Content:\n" + content);
+                System.out.println("📦 Content:\n" + htmlContent);
 
-                User fallbackUser = userRepository.findById(1L).orElse(null);
-                if (fallbackUser == null) {
-                    System.out.println("❌ User ID 1 not found.");
-                } else {
-                    System.out.println("✅ Loaded user: " + fallbackUser.getEmail());
+                String aliasEmail = extractAliasFromRecipient(message);
+                Long userId = extractUserIdFromAlias(aliasEmail);
+                User user = userRepository.findById(userId).orElse(null);
+
+                if (user == null) {
+                    System.out.println("❌ User ID " + userId + " not found. Skipping.");
+                    continue;
                 }
 
-                FlightEmail email = new FlightEmail();
-                email.setSubject(subject);
-                email.setSender(sender);
-                email.setFlightDate(sentDate);
-                email.setContent(content);
-                email.setUser(fallbackUser);
+                System.out.println("✅ Loaded user: " + user.getEmail());
+
+                FlightEmail email = flightParserService.parse(
+                        htmlContent, subject, sender, user, sentDate, attachments
+                );
 
                 System.out.println("💾 Attempting to save...");
                 flightEmailRepository.save(email);
-                System.out.println("✅ Saved email with user ID: " + (fallbackUser != null ? fallbackUser.getId() : "null"));
+                System.out.println("✅ Saved email with user ID: " + user.getId());
 
                 message.setFlag(Flags.Flag.SEEN, true);
                 System.out.println("✅ Marked message as SEEN.");
             }
+
 
             inbox.close(false);
             store.close();
@@ -103,107 +106,66 @@ public class EmailReaderService {
         }
     }
 
-    private String extractContent(Message message) throws Exception {
-        Object content = message.getContent();
-        if (content instanceof String) {
-            return (String) content;
-        } else if (content instanceof MimeMultipart) {
-            return getTextFromMimeMultipart((MimeMultipart) content);
+
+    private String extractHtmlContent(Part part) throws Exception {
+        if (part.isMimeType("text/html")) {
+            return part.getContent().toString();
+        } else if (part.isMimeType("text/plain")) {
+            return part.getContent().toString();
+        } else if (part.isMimeType("multipart/*")) {
+            Multipart multipart = (Multipart) part.getContent();
+            for (int i = 0; i < multipart.getCount(); i++) {
+                BodyPart bodyPart = multipart.getBodyPart(i);
+                String result = extractHtmlContent(bodyPart);
+                if (result != null && !result.isBlank()) {
+                    return result;
+                }
+            }
         }
         return "";
     }
 
-    private String getTextFromMimeMultipart(MimeMultipart mimeMultipart) throws Exception {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < mimeMultipart.getCount(); i++) {
-            BodyPart part = mimeMultipart.getBodyPart(i);
-            if (part.isMimeType("text/html") || part.isMimeType("text/plain")) {
-                result.append(part.getContent());
-            } else if (part.getContent() instanceof MimeMultipart) {
-                result.append(getTextFromMimeMultipart((MimeMultipart) part.getContent()));
+    private List<EmailAttachment> extractAttachments(Part part) throws Exception {
+        List<EmailAttachment> attachments = new ArrayList<>();
+
+        if (part.isMimeType("multipart/*")) {
+            Multipart multipart = (Multipart) part.getContent();
+            for (int i = 0; i < multipart.getCount(); i++) {
+                BodyPart bodyPart = multipart.getBodyPart(i);
+
+                if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())
+                        && bodyPart.getFileName().toLowerCase().endsWith(".pdf")) {
+
+                    byte[] content = bodyPart.getInputStream().readAllBytes();
+                    attachments.add(new EmailAttachment(
+                            bodyPart.getFileName(),
+                            content,
+                            bodyPart.getContentType()
+                    ));
+                }
             }
         }
-        return result.toString();
+
+        return attachments;
     }
-    private LocalDate tryParseDate(String input) {
-        List<DateTimeFormatter> formatters = List.of(
-                DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH),
-                DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH),
-                DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("es")),
-                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                DateTimeFormatter.ofPattern("dd-MM-yyyy")
-        );
-        for (DateTimeFormatter formatter : formatters) {
-            try {
-                return LocalDate.parse(input, formatter);
-            } catch (DateTimeParseException ignored) {}
-        }
-        return null;
+    private String extractAliasFromRecipient(Message message) throws MessagingException {
+        Address[] recipients = message.getRecipients(Message.RecipientType.TO);
+        if (recipients == null || recipients.length == 0) return "";
+        return recipients[0].toString(); // viajestickety+9@gmail.com
     }
 
-
-
-    public FlightEmail parseFlightDetailsFromContent(String content, User user, String subject, String sender) {
-        FlightEmail flight = new FlightEmail();
-
-        flight.setUser(user);
-        flight.setSubject(subject);
-        flight.setSender(sender);
-        flight.setCreatedAt(new Date()); // java.util.Date
-
-
-        // Booking Code — format like 1052-495-594
-        Pattern bookingPattern = Pattern.compile("\\b\\d{3}-\\d{3}-\\d{3}\\b");
-        Matcher bookingMatcher = bookingPattern.matcher(content);
-        if (bookingMatcher.find()) {
-            flight.setBookingCode(bookingMatcher.group());
-        }
-
-        // Airports — use 3-letter IATA codes
-        Pattern airportPattern = Pattern.compile("\\b[A-Z]{3}\\b");
-        Matcher airportMatcher = airportPattern.matcher(content);
-        List<String> airports = new ArrayList<>();
-        while (airportMatcher.find()) {
-            airports.add(airportMatcher.group());
-        }
-        if (airports.size() >= 2) {
-            flight.setDepartureAirport(airports.get(0));
-            flight.setArrivalAirport(airports.get(1));
-        }
-
-        // Times — e.g., 18:25 or 20:40
-        Pattern timePattern = Pattern.compile("\\b\\d{1,2}:\\d{2}\\b");
-        Matcher timeMatcher = timePattern.matcher(content);
-        List<String> times = new ArrayList<>();
-        while (timeMatcher.find()) {
-            times.add(timeMatcher.group());
-        }
-        if (times.size() >= 2) {
-            flight.setDepartureTime(times.get(0));
-            flight.setArrivalTime(times.get(1));
-        }
-
-
-        // Flight date — pick first DD MMMM YYYY or "dd/MM/yyyy"-like pattern
-        Pattern datePattern = Pattern.compile("(\\d{1,2})[\\s/-](\\w+)[\\s/-](\\d{4})");
-        Matcher dateMatcher = datePattern.matcher(content);
-        if (dateMatcher.find()) {
-            String rawDate = dateMatcher.group(0);
-            LocalDate parsedDate = tryParseDate(rawDate);
-            if (parsedDate != null) {
-                flight.setFlightDate(java.sql.Date.valueOf(parsedDate));
+    private Long extractUserIdFromAlias(String address) {
+        try {
+            int plusIndex = address.indexOf('+');
+            int atIndex = address.indexOf('@');
+            if (plusIndex >= 0 && atIndex > plusIndex) {
+                String idStr = address.substring(plusIndex + 1, atIndex);
+                return Long.parseLong(idStr);
             }
-
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to parse userId from alias: " + e.getMessage());
         }
-        // Flight Number — format like UX1090, AF456, etc.
-        Pattern flightNumberPattern = Pattern.compile("\\b[A-Z]{2}\\d{2,4}\\b");
-        Matcher flightNumberMatcher = flightNumberPattern.matcher(content);
-        if (flightNumberMatcher.find()) {
-            flight.setFlightNumber(flightNumberMatcher.group());
-        }
-
-        return flight;
+        return 1L; // fallback
     }
 
 }
-

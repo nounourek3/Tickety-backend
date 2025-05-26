@@ -1,5 +1,6 @@
 package com.example.tickety.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -31,6 +32,7 @@ public class FlightEmail {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     @OneToOne(mappedBy = "flightEmail")
@@ -83,6 +85,8 @@ public class FlightEmail {
     public User getUser() {
         return user;
     }
+
+    private String pdfUrl;
 
     public FlightNotification getFlightNotification() {
         return flightNotification;
@@ -138,6 +142,46 @@ public class FlightEmail {
         this.user = user;
     }
 
+    @Column(name = "flight_day")
+    private String flightDay;
+
+    @Column(name = "flight_month")
+    private String flightMonth;
+
+    @Column(columnDefinition = "TEXT")
+    private String rawText;
+
+    public String getPdfUrl() {
+        return pdfUrl;
+    }
+
+    public void setPdfUrl(String pdfUrl) {
+        this.pdfUrl = pdfUrl;
+    }
+
+    public String getRawText() {
+        return rawText;
+    }
+
+    public void setRawText(String rawText) {
+        this.rawText = rawText;
+    }
+
+    public String getFlightDay() {
+        return flightDay;
+    }
+
+    public void setFlightDay(String flightDay) {
+        this.flightDay = flightDay;
+    }
+
+    public String getFlightMonth() {
+        return flightMonth;
+    }
+
+    public void setFlightMonth(String flightMonth) {
+        this.flightMonth = flightMonth;
+    }
     public void setFlightNotification(FlightNotification flightNotification) {
         this.flightNotification = flightNotification;
     }

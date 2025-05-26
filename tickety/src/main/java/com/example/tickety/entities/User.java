@@ -3,11 +3,12 @@ package com.example.tickety.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
+@ToString(exclude = "flightEmails")
 @Data
-@Getter
 @Entity
 public class User {
     @Id

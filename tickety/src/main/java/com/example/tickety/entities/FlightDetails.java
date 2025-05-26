@@ -16,6 +16,18 @@ public class FlightDetails {
     @JoinColumn(name="flight_email_id")
     private FlightEmail flightEmail;
 
+    @OneToOne
+    @JoinColumn(name="flight_id")
+    private Flight flight;
+
+    public Flight getFlight() {
+        return flight;
+    }
+
+    public void setFlight(Flight flight) {
+        this.flight = flight;
+    }
+
     public Long getId() {
         return id;
     }
