@@ -2,6 +2,7 @@ package com.example.tickety.DTOS;
 
 import com.example.tickety.entities.Flight;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 public class FlightDTO {
@@ -12,7 +13,7 @@ public class FlightDTO {
     private String arrivalAirport;
     private String departureTime;
     private String arrivalTime;
-    private Date flightDate;
+    private LocalDate flightDate;
 
     public Long getId() {
         return id;
@@ -70,11 +71,11 @@ public class FlightDTO {
         this.arrivalTime = arrivalTime;
     }
 
-    public Date getFlightDate() {
+    public LocalDate getFlightDate() {
         return flightDate;
     }
 
-    public void setFlightDate(Date flightDate) {
+    public void setFlightDate(LocalDate flightDate) {
         this.flightDate = flightDate;
     }
 

@@ -9,7 +9,26 @@ public class CreateFlightRequest {
     private String arrivalTime;
     private String flightDate; // Format: "yyyy-MM-dd"
     private Long userId;
-    private Long flightEmailId;
+    private String airline;
+    private String seat;
+
+    // Getters and setters...
+
+    public String getAirline() {
+        return airline;
+    }
+
+    public void setAirline(String airline) {
+        this.airline = airline;
+    }
+
+    public String getSeat() {
+        return seat;
+    }
+
+    public void setSeat(String seat) {
+        this.seat = seat;
+    }
 
     public String getFlightNumber() {
         return flightNumber;
@@ -73,13 +92,5 @@ public class CreateFlightRequest {
 
     public void setUserId(Long userId) {
         this.userId = userId;
-    }
-
-    public Long getFlightEmailId() {
-        return flightEmailId;
-    }
-
-    public void setFlightEmailId(Long flightEmailId) {
-        this.flightEmailId = flightEmailId;
     }
 }

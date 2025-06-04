@@ -37,15 +37,7 @@ public class FlightNotification {
         this.message = message;
     }
 
-    public FlightEmail getFlightEmail() {
-        return flightEmail;
-    }
 
-    public void setFlightEmail(FlightEmail flightEmail) {
-        this.flightEmail = flightEmail;
-    }
 
-    @OneToOne
-    @JoinColumn(name="flight_email_id")
-    private FlightEmail flightEmail;
+
 }

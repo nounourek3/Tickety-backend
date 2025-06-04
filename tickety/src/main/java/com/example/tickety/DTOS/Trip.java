@@ -2,34 +2,50 @@ package com.example.tickety.DTOS;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 public class Trip {
-    private String subject;
-    private String sender;
+    private Long id;
     private String flightNumber;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date flightDate;
+    private LocalDate flightDate;
 
     private String departureTime;
     private String arrivalTime;
     private String departureAirport;
     private String arrivalAirport;
     private String bookingCode;
+    private String airline;
+    private String seat;
+
+    public String getAirline() { return airline; }
+    public void setAirline(String airline) { this.airline = airline; }
+
+    public String getSeat() { return seat; }
+    public void setSeat(String seat) { this.seat = seat; }
+
 
     // Getters and Setters
-    public String getSubject() { return subject; }
-    public void setSubject(String subject) { this.subject = subject; }
 
-    public String getSender() { return sender; }
-    public void setSender(String sender) { this.sender = sender; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getFlightNumber() { return flightNumber; }
     public void setFlightNumber(String flightNumber) { this.flightNumber = flightNumber; }
 
-    public Date getFlightDate() { return flightDate; }
-    public void setFlightDate(Date flightDate) { this.flightDate = flightDate; }
+    public LocalDate getFlightDate() {
+        return flightDate;
+    }
+
+    public void setFlightDate(LocalDate flightDate) {
+        this.flightDate = flightDate;
+    }
 
     public String getDepartureTime() { return departureTime; }
     public void setDepartureTime(String departureTime) { this.departureTime = departureTime; }

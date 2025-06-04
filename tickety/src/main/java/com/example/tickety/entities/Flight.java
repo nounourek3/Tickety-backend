@@ -2,6 +2,7 @@ package com.example.tickety.entities;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -16,9 +17,14 @@ public class Flight {
     private String arrivalAirport;
     private String departureTime;
     private String arrivalTime;
+    @Column(name = "airline")
+    private String airline;
 
-    @Temporal(TemporalType.DATE)
-    private Date flightDate;
+    @Column(name = "seat")
+    private String seat;
+
+    private LocalDate flightDate;
+
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt = new Date();
@@ -26,13 +32,28 @@ public class Flight {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+    
 
-    @OneToOne
-    @JoinColumn(name = "flight_email_id")
-    private FlightEmail flightEmail;
 
-    @OneToOne(mappedBy = "flight", cascade = CascadeType.ALL)
-    private FlightDetails flightDetails;
+
+
+    // Getters and setters...
+
+    public String getAirline() {
+        return airline;
+    }
+
+    public void setAirline(String airline) {
+        this.airline = airline;
+    }
+
+    public String getSeat() {
+        return seat;
+    }
+
+    public void setSeat(String seat) {
+        this.seat = seat;
+    }
 
     public Long getId() {
         return id;
@@ -90,11 +111,11 @@ public class Flight {
         this.arrivalTime = arrivalTime;
     }
 
-    public Date getFlightDate() {
+    public LocalDate getFlightDate() {
         return flightDate;
     }
 
-    public void setFlightDate(Date flightDate) {
+    public void setFlightDate(LocalDate flightDate) {
         this.flightDate = flightDate;
     }
 
@@ -114,19 +135,4 @@ public class Flight {
         this.user = user;
     }
 
-    public FlightEmail getFlightEmail() {
-        return flightEmail;
-    }
-
-    public void setFlightEmail(FlightEmail flightEmail) {
-        this.flightEmail = flightEmail;
-    }
-
-    public FlightDetails getFlightDetails() {
-        return flightDetails;
-    }
-
-    public void setFlightDetails(FlightDetails flightDetails) {
-        this.flightDetails = flightDetails;
-    }
 }

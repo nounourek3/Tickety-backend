@@ -1,6 +1,5 @@
 package com.example.tickety.entities;
 
-import com.example.tickety.entities.FlightEmail;
 import jakarta.persistence.*;
 
 @Entity
@@ -12,9 +11,7 @@ public class FlightDetails {
     private String classType;
     private String seatNumber;
 
-    @ManyToOne
-    @JoinColumn(name="flight_email_id")
-    private FlightEmail flightEmail;
+
 
     @OneToOne
     @JoinColumn(name="flight_id")
@@ -60,11 +57,7 @@ public class FlightDetails {
         this.seatNumber = seatNumber;
     }
 
-    public FlightEmail getFlightEmail() {
-        return flightEmail;
-    }
 
-    public void setFlightEmail(FlightEmail flightEmail) {
-        this.flightEmail = flightEmail;
-    }
+
+
 }
