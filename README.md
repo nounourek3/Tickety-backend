@@ -51,3 +51,7 @@ Built with Spring Boot 3, it follows a modular, clean architecture with JWT auth
 ✅ Role-based access for protected endpoints
 ✅ Refresh token rotation & token expiration handling
 ✅ CORS and exception handling configured for frontend integration
+
+👩‍💻 Author: Nour Rekik  
+Full-Stack Developer — Angular & Spring Boot  
+[linkedin](https://www.linkedin.com/in/nourrekik/)
